@@ -1,0 +1,8 @@
+date:     Mon  5 Oct 2026 20:02:35 ACDT
+host:     Pahuls-MacBook-Pro.local
+cores:    12
+cpu:      Apple M3 Pro  P-cores: 6  E-cores: 6
+compiler: Apple clang version 15.0.0 (clang-1500.3.9.4)
+flags:    -O2 -Xpreprocessor -fopenmp -I/opt/homebrew/opt/libomp/include -L/opt/homebrew/opt/libomp/lib -lomp -DNO_OUTPUT
+params:   n=4000 steps=100 dt=0.01, output disabled
+runs:     5 per config (+1 warm-up discarded)

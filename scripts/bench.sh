@@ -18,7 +18,7 @@ CORES=$(nproc 2>/dev/null || sysctl -n hw.ncpu)  # Linux or macOS
 
 mkdir -p bin results
 for p in omp_nbody_basic omp_nbody_red_default omp_nbody_red omp_nbody_red_all_cyclic; do
-  $CC -O2 -Wall -fopenmp -DNO_OUTPUT -o bin/$p src/$p.c -lm 2>/dev/null
+  $CC -O2 -Wall ${OMPFLAGS:--fopenmp} -DNO_OUTPUT -o bin/$p src/$p.c -lm 2>/dev/null
 done
 
 {
@@ -28,7 +28,7 @@ done
   lscpu 2>/dev/null | grep -E "Model name|Thread\(s\) per core|Core\(s\) per socket" \
     || echo "cpu:      $(sysctl -n machdep.cpu.brand_string 2>/dev/null)  P-cores: $(sysctl -n hw.perflevel0.physicalcpu 2>/dev/null)  E-cores: $(sysctl -n hw.perflevel1.physicalcpu 2>/dev/null)"
   echo "compiler: $($CC --version | head -1)"
-  echo "flags:    -O2 -fopenmp -DNO_OUTPUT"
+  echo "flags:    -O2 ${OMPFLAGS:--fopenmp} -DNO_OUTPUT"
   echo "params:   n=$N steps=$STEPS dt=$DT, output disabled"
   echo "runs:     $RUNS per config (+1 warm-up discarded)"
 } > results/environment.txt

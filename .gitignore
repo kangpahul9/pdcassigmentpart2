@@ -1,5 +1,10 @@
 serial
+crit
+locks
+crit_t
+locks_t
 *.o
 bin/
-*.txt
+ref.txt
+out*.txt
 .vscode/

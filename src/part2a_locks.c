@@ -306,6 +306,7 @@ void Compute_force(int part, vect_t forces[], omp_lock_t locks[],
    int k;
    double mg;
    vect_t f_part_k;
+   vect_t f_part = {0.0, 0.0}; 
    double len, len_3, fact;
 
 #  ifdef DEBUG
@@ -327,18 +328,22 @@ void Compute_force(int part, vect_t forces[], omp_lock_t locks[],
             part, k, f_part_k[X], f_part_k[Y]);
 #     endif
 
-         /* Each forces[i] update is protected by its own lock.
-       * Only one lock held at a time -> no deadlock. */
-      omp_set_lock(&locks[part]);
-      forces[part][X] += f_part_k[X];
-      forces[part][Y] += f_part_k[Y];
-      omp_unset_lock(&locks[part]);
+      /* Contribution to part: accumulate privately, no lock needed. */
+      f_part[X] += f_part_k[X];
+      f_part[Y] += f_part_k[Y];
 
+      /* Opposite contribution to k: shared, protected by locks[k]. */
       omp_set_lock(&locks[k]);
       forces[k][X] -= f_part_k[X];
       forces[k][Y] -= f_part_k[Y];
       omp_unset_lock(&locks[k]);
    }
+
+   /* One protected update of forces[part] instead of n-1-part. */
+   omp_set_lock(&locks[part]);
+   forces[part][X] += f_part[X];
+   forces[part][Y] += f_part[Y];
+   omp_unset_lock(&locks[part]);
 }  /* Compute_force */
 
 

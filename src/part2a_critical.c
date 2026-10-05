@@ -69,7 +69,6 @@ void Get_args(int argc, char* argv[], int* thread_count_p, int* n_p,
 void Get_init_cond(struct particle_s curr[], int n);
 void Gen_init_cond(struct particle_s curr[], int n);
 void Output_state(double time, struct particle_s curr[], int n);
-void Reset_forces(vect_t forces[], int n);
 void Compute_force(int part, vect_t forces[], struct particle_s curr[],
       int n);
 void Update_part(int part, vect_t forces[], struct particle_s curr[],
@@ -102,7 +101,7 @@ int main(int argc, char* argv[]) {
 #  ifndef NO_OUTPUT
    Output_state(0, curr, n);
 #  endif
-   #  pragma omp parallel num_threads(thread_count) default(none) \
+#  pragma omp parallel num_threads(thread_count) default(none) \
       shared(curr, forces, n, n_steps, delta_t, output_freq) \
       private(step, part)
    for (step = 1; step <= n_steps; step++) {
@@ -113,7 +112,7 @@ int main(int argc, char* argv[]) {
          forces[part][X] = forces[part][Y] = 0.0;
 
       /* Particle n-1 has all its forces after Compute_force(n-2, ...). */
-#     pragma omp for
+#     pragma omp for schedule(static, 1)
       for (part = 0; part < n-1; part++)
          Compute_force(part, forces, curr, n);
 
@@ -181,8 +180,8 @@ void Get_args(int argc, char* argv[], int* thread_count_p, int* n_p,
    *output_freq_p = strtol(argv[5], NULL, 10);
    *g_i_p = argv[6][0];
 
-   if (*thread_count_p < 0 || *n_p <= 0 || *n_steps_p < 0 ||
-       *delta_t_p <= 0)
+   if (*thread_count_p <= 0 || *n_p <= 0 || *n_steps_p < 0 ||
+       *delta_t_p <= 0 || *output_freq_p <= 0)
       Usage(argv[0]);
    if (*g_i_p != 'g' && *g_i_p != 'i') Usage(argv[0]);
 
@@ -275,21 +274,6 @@ void Output_state(double time, struct particle_s curr[], int n) {
    printf("\n");
 }  /* Output_state */
 
-
-/*---------------------------------------------------------------------
- * Function:  Reset_forces
- * Purpose:   Reset the shared force array before a timestep
- * In arg:
- *    n:      number of particles
- * Out arg:
- *    forces: force[i] stores the total force on particle i
- */
-void Reset_forces(vect_t forces[], int n) {
-   int part;
-
-   for (part = 0; part < n; part++)
-      forces[part][X] = forces[part][Y] = 0.0;
-}  /* Reset_forces */
 
 
 /*---------------------------------------------------------------------

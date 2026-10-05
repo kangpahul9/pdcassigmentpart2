@@ -4,7 +4,7 @@
 # Output: results/raw_times.csv (impl,threads,run,seconds)
 #         results/environment.txt
 # Usage:  ./scripts/bench.sh
-#         N=4000 STEPS=100 RUNS=5 THREADS="1 4 8 16 32" ./scripts/bench.sh
+#         CC=gcc-16 N=4000 STEPS=100 RUNS=5 THREADS="1 4 8 16 32" ./scripts/bench.sh
 set -eu
 cd "$(dirname "$0")/.."
 
@@ -13,18 +13,21 @@ STEPS=${STEPS:-100}
 DT=0.01
 RUNS=${RUNS:-5}
 THREADS=${THREADS:-"1 4 8 16 32"}
+CC=${CC:-gcc}                                     # e.g. CC=gcc-16 on macOS
+CORES=$(nproc 2>/dev/null || sysctl -n hw.ncpu)  # Linux or macOS
 
 mkdir -p bin results
 for p in omp_nbody_basic omp_nbody_red_default omp_nbody_red omp_nbody_red_all_cyclic; do
-  gcc -O2 -Wall -fopenmp -DNO_OUTPUT -o bin/$p src/$p.c -lm 2>/dev/null
+  $CC -O2 -Wall -fopenmp -DNO_OUTPUT -o bin/$p src/$p.c -lm 2>/dev/null
 done
 
 {
   echo "date:     $(date)"
   echo "host:     $(hostname)"
-  echo "cores:    $(nproc)"
-  lscpu | grep -E "Model name|^CPU\(s\)|Thread\(s\) per core|Core\(s\) per socket|Socket\(s\)" || true
-  echo "compiler: $(gcc --version | head -1)"
+  echo "cores:    $CORES"
+  lscpu 2>/dev/null | grep -E "Model name|Thread\(s\) per core|Core\(s\) per socket" \
+    || echo "cpu:      $(sysctl -n machdep.cpu.brand_string 2>/dev/null)  P-cores: $(sysctl -n hw.perflevel0.physicalcpu 2>/dev/null)  E-cores: $(sysctl -n hw.perflevel1.physicalcpu 2>/dev/null)"
+  echo "compiler: $($CC --version | head -1)"
   echo "flags:    -O2 -fopenmp -DNO_OUTPUT"
   echo "params:   n=$N steps=$STEPS dt=$DT, output disabled"
   echo "runs:     $RUNS per config (+1 warm-up discarded)"

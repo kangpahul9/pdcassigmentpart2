@@ -2,3 +2,4 @@ serial
 *.o
 bin/
 *.txt
+.vscode/

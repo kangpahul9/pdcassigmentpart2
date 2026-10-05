@@ -1,0 +1,4 @@
+serial
+*.o
+bin/
+*.txt
